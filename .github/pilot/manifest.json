@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "b57f73f5828f24eeb36b9891e42167f4ff27a442",
+  "dataset": "synthetic",
+  "repository": "possee41/docentetuc-fdci-catalog-pilot",
+  "files": [
+    {
+      "path": ".github/pilot/fdci-static-artifact.mjs",
+      "bytes": 40337,
+      "sha256": "2cc1862fac8a1da5bc3418cb58c93c0676f106c73d009e819c4ec72b087f4526"
+    },
+    {
+      "path": ".github/workflows/fdci-static-catalog-pilot.yml",
+      "bytes": 5645,
+      "sha256": "0e8cc9a742643b3d38e5c6d7178bf5413d12ea892ad633ebeb7e55b55bf5445e"
+    }
+  ]
+}
