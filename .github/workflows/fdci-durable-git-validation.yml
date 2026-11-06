@@ -1,0 +1,53 @@
+name: FDCI durable Git finite validation
+run-name: FDCI durable Git / ${{ inputs.trial_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact reviewed executable commit
+        type: string
+        required: true
+      seed_revision:
+        description: Exact approved migrated Git blob SHA
+        type: string
+        required: true
+      seed_checksum:
+        description: Exact approved migrated state SHA-256
+        type: string
+        required: true
+      trial_id:
+        description: Identifier of the single authorized validation
+        type: string
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: fdci-official-durable-state
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.repository == 'possee41/docentetuc-fdci-catalog-pilot' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      APPROVED_SHA: ${{ inputs.approved_sha }}
+      SEED_REVISION: ${{ inputs.seed_revision }}
+      SEED_CHECKSUM: ${{ inputs.seed_checksum }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate durable Git state without official source queries
+        run: node .github/pilot/fdci-durable-git-validation.mjs
+      - name: Keep finite validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdci-durable-git-validation
+          path: validation-result/result.json
+          if-no-files-found: error
+          retention-days: 2

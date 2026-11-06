@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "a5eb78fab8144d1935002fe6103f410aaa370ece",
+  "repository": "possee41/docentetuc-fdci-catalog-pilot",
+  "scenario": "durable-validation-no-official-query",
+  "files": [
+    {
+      "path": ".github/pilot/fdci-durable-git-validation.mjs",
+      "bytes": 46336,
+      "sha256": "bd90ede36000834a195b8a7aab25d7662d5fb6fda73fbef82e57c42228245f2b"
+    },
+    {
+      "path": ".github/workflows/fdci-durable-git-validation.yml",
+      "bytes": 1709,
+      "sha256": "459edb730f3afdab634c82fe1c2bb18c6e805a0ff0fea7385db65a3b0c60e42a"
+    }
+  ]
+}
