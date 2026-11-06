@@ -1,0 +1,60 @@
+name: FDCI official read-only finite pilot
+run-name: FDCI official read-only / ${{ inputs.trial_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact reviewed commit SHA
+        type: string
+        required: true
+      trial_id:
+        description: Identifier of the single authorized execution
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: fdci-static-official-readonly-state-v1
+  cancel-in-progress: false
+jobs:
+  official-readonly:
+    if: github.repository == 'possee41/docentetuc-fdci-catalog-pilot' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FDCI_STATIC_APPROVED_SHA: ${{ inputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify reviewed SHA and clean state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$FDCI_STATIC_APPROVED_SHA" =~ ^[a-f0-9]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$FDCI_STATIC_APPROVED_SHA"
+          test "$GITHUB_SHA" = "$FDCI_STATIC_APPROVED_SHA"
+          test ! -e .fdci-official-runner
+          WORKFLOW_ID="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/fdci-static-official-readonly-pilot.yml" --jq .id)"
+          echo "FDCI_STATIC_WORKFLOW_ID=$WORKFLOW_ID" >> "$GITHUB_ENV"
+      - name: Collect official public data once without publishing
+        run: node .github/pilot/fdci-static-official-readonly.mjs collect
+      - name: Preserve evidence and any confirmed checkpoint only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdci-static-official-readonly-state-v1
+          path: official-artifact/
+          if-no-files-found: error
+          retention-days: 2
+      - name: Record read-only result
+        if: always()
+        run: |
+          if [[ -f official-artifact/result.json ]]; then
+            cat official-artifact/result.json >> "$GITHUB_STEP_SUMMARY"
+          fi

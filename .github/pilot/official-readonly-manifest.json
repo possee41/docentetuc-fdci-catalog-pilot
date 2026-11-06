@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "658305e5cfe2591b390e43c12b2527c59c4ee1a6",
+  "dataset": "official-readonly",
+  "repository": "possee41/docentetuc-fdci-catalog-pilot",
+  "files": [
+    {
+      "path": ".github/pilot/fdci-static-official-readonly.mjs",
+      "bytes": 38820,
+      "sha256": "1e5e3bae764f0084fa5fad172f03818098f52dac292134bd52dcd8671f5daa5a"
+    },
+    {
+      "path": ".github/workflows/fdci-static-official-readonly-pilot.yml",
+      "bytes": 2159,
+      "sha256": "bef21092930a437896352cc3f16904e0e8880af53c37e3c2a5cfb756bf42235f"
+    }
+  ]
+}
