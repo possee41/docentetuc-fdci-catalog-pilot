@@ -643,7 +643,9 @@ async function runFdciStaticCycle({ workDirectory, publishDirectory, fetcher, ch
       return { status: "partial", requests, published: false, pending: activeCount - items.size, cursor: next.state };
     }
     if (items.size !== activeCount) throw Error("STATIC_CATALOG_INCOMPLETE");
-    const catalog = await buildFdciCatalog([...items.values()], checkedAt, observations);
+    const publishable = [...items.values()].filter((item) => ["ACTIVE", "UPCOMING"].includes(item.normalizedStatus));
+    const publishedObservations = Object.fromEntries(publishable.map((item) => [item.id, observations[item.id]]));
+    const catalog = await buildFdciCatalog(publishable, checkedAt, publishedObservations);
     const result2 = await publishLocalCatalog(catalog, output);
     await saveCheckpoint(path2, { ...fresh(history), lastCheckAt: checkedAt });
     return { status: "complete", requests, published: true, ...result2 };

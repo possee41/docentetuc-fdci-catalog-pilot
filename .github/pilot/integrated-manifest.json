@@ -5,8 +5,8 @@
   "files": [
     {
       "path": ".github/pilot/fdci-static-runner.mjs",
-      "bytes": 56350,
-      "sha256": "83811e57f00300470b9d020cad23520e4299b457c4e5baa98a878cf05669f280"
+      "bytes": 56584,
+      "sha256": "96c762f9f0d897c80380e11008a3af44ccfc4a497616111936320b70a95efe28"
     },
     {
       "path": ".github/workflows/fdci-static-integrated.yml",
@@ -87,5 +87,14 @@
       "path": "scripts/fdci-static-runner.mjs",
       "sha256": "a7835ade06016586627354aefc5f52a238df61193050785a9eb6f248d0d7e24e"
     }
-  ]
+  ],
+  "safetyPatch": {
+    "baseRunnerSha256": "83811e57f00300470b9d020cad23520e4299b457c4e5baa98a878cf05669f280",
+    "excludeFromActive": [
+      "CLOSED",
+      "EXPIRED",
+      "UNKNOWN"
+    ],
+    "checkpointUnchanged": true
+  }
 }
