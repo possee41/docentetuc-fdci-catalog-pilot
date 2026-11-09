@@ -267,8 +267,8 @@ function trainingStatus(commission, now = /* @__PURE__ */ new Date()) {
   const finishes = localDateTime(commission.fecha_fin, true);
   const closed = Boolean(Number(commission.comision_cerrada));
   if (closed) return "inscripci\xF3n cerrada";
-  if (opens && commission.isActivePre != null && !Boolean(Number(commission.isActivePre))) return "inscripci\xF3n cerrada";
   if (opens && time < new Date(opens).getTime()) return "pr\xF3ximamente";
+  if (opens && commission.isActivePre != null && !Boolean(Number(commission.isActivePre))) return "inscripci\xF3n cerrada";
   if (closes && time > new Date(closes).getTime()) return "inscripci\xF3n cerrada";
   if (opens && (closes || Boolean(Number(commission.isActivePre)))) return "inscripci\xF3n abierta";
   if (starts && time < new Date(starts).getTime()) return "consultar";
@@ -466,7 +466,7 @@ var fdciKey = (course, commission) => {
 // scripts/collect-fdci-delta.mjs
 var root = "https://apicapacitaciones.educaciontuc.edu.ar/api";
 var courseKey = (id3) => fdciKey(id3, 1).slice(0, 12);
-async function collectFdciDeltaSlice(fetcher, { state, queued, courseLimit = 4 }) {
+async function collectFdciDeltaSlice(fetcher, { state, queued, courseLimit = 4, now = /* @__PURE__ */ new Date(), onInventory = async () => null }) {
   if (!Number.isSafeInteger(courseLimit) || courseLimit < 1 || courseLimit > 4) throw new Error("FDCI_DETAIL_LIMIT_INVALID");
   if (![state.detail_after, state.detail_upper].every((value) => typeof value === "string" && /^(?:\d{12})?$/.test(value)) || state.detail_after > state.detail_upper) throw new Error("FDCI_DELTA_CURSOR_INVALID");
   const active = await requestJson(`${root}/gestionCapas/getCapaActivas`, {}, fetcher);
@@ -476,18 +476,31 @@ async function collectFdciDeltaSlice(fetcher, { state, queued, courseLimit = 4 }
   for (const c of active) {
     fdciKey(c?.capacitacion_id, c?.id);
     const previous = commissions.get(String(c.id));
-    if (previous && String(previous.capacitacion_id) !== String(c.capacitacion_id)) throw new Error("FDCI_SCHEMA_CHANGED");
+    if (previous) throw new Error("FDCI_SCHEMA_CHANGED");
     commissions.set(String(c.id), c);
   }
-  if (!commissions.size && state.detail_upper) throw new Error("FDCI_DELTA_COLLECTION_INCOMPLETE");
   const parents = /* @__PURE__ */ new Map();
   const activeKeys = new Set([...commissions.values()].map((c) => courseKey(c.capacitacion_id)));
+  const upcomingKeys = /* @__PURE__ */ new Set();
   for (const c of courses) {
+    if (c?.proxima_fecha_preinscripcion) {
+      const date = String(c.proxima_fecha_preinscripcion);
+      if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(date)) throw new Error("FDCI_SCHEMA_CHANGED");
+      const opening = Date.parse(date.replace(" ", "T") + "-03:00");
+      if (!Number.isFinite(opening)) throw new Error("FDCI_SCHEMA_CHANGED");
+      if (opening > now.getTime()) {
+        const key2 = courseKey(c.capacitacion_id);
+        activeKeys.add(key2);
+        upcomingKeys.add(key2);
+      }
+    }
     if (!c || !activeKeys.has(String(c.capacitacion_id).padStart(12, "0"))) continue;
     const key = courseKey(c.capacitacion_id);
     if (parents.has(key)) throw new Error("FDCI_SCHEMA_CHANGED");
     parents.set(key, c);
   }
+  const inventory = [...commissions.values()].map((c) => `commission:${c.capacitacion_id}:${c.id}`).concat([...upcomingKeys].map((key) => `upcoming:${key}:${parents.get(key).proxima_fecha_preinscripcion}`)).sort();
+  state = await onInventory(inventory) || state;
   const keys = [...activeKeys].sort(), upper = state.detail_upper || keys.at(-1) || "";
   const after = state.detail_after || "";
   const pending = keys.filter((key) => key > after && key <= upper);
@@ -527,7 +540,16 @@ async function collectFdciDeltaSlice(fetcher, { state, queued, courseLimit = 4 }
       if (rows.length !== 1) throw new Error("FDCI_DELTA_COLLECTION_INCOMPLETE");
       return rows[0];
     });
-    items.push(...await prepareFdciImports([course], matched));
+    if (upcomingKeys.has(key)) {
+      for (const row of detail.comisiones) {
+        if (String(row.capacitacion_id) !== String(course.capacitacion_id)) throw new Error("FDCI_SCHEMA_CHANGED");
+        fdciKey(row.capacitacion_id, row.id);
+        if (!matched.some((c) => String(c.id) === String(row.id))) matched.push(row);
+      }
+      if (!matched.length) throw new Error("FDCI_DELTA_COLLECTION_INCOMPLETE");
+    }
+    if (new Set(matched.map((c) => String(c.id))).size !== matched.length) throw new Error("FDCI_SCHEMA_CHANGED");
+    items.push(...await prepareFdciImports([course], matched, now));
     completed.add(key);
   }
   let next = after;
@@ -542,7 +564,8 @@ async function collectFdciDeltaSlice(fetcher, { state, queued, courseLimit = 4 }
     failures: 0,
     activeCommissions: commissions.size,
     detail: { after: next, upper, complete },
-    coursesFetched: completed.size
+    coursesFetched: completed.size,
+    pendingCourses: pending.filter((key) => key > next).length
   };
 }
 
@@ -586,36 +609,29 @@ async function runFdciStaticCycle({ workDirectory, publishDirectory, fetcher, ch
       if (e.code !== "ENOENT") throw e;
     }
     if (previous.lastCheckAt && checkedAt <= previous.lastCheckAt) throw Error("CHECKPOINT_TIME_CONFLICT");
-    let activeKey, activeCount, membershipChanged = false;
+    let activeKey;
     let slice;
-    try {
-      slice = await collectFdciDeltaSlice(async (url, options) => {
-        const u = new URL(url);
-        if (u.origin !== "https://apicapacitaciones.educaciontuc.edu.ar" || u.search || !["/api/gestionCapas/getCapaActivas", "/api/gestionCapas/getRestoCapas", "/api/capa/getCupo"].includes(u.pathname)) throw Error("FDCI_SOURCE_FORBIDDEN");
-        if (requests >= 6) throw Error("FDCI_PROBE_REQUEST_LIMIT");
-        requests++;
-        if (requests > 1) await pause2(400);
-        const response = await fetcher(url, { ...options, redirect: "error", credentials: "omit" });
-        if (u.pathname.endsWith("getCapaActivas") && response.ok) {
-          const rows = await response.clone().json();
-          if (!Array.isArray(rows)) throw Error("FDCI_SCHEMA_CHANGED");
-          const keys = rows.map((x) => `${x.capacitacion_id}:${x.id}`).sort();
-          if (new Set(keys).size !== keys.length) throw Error("FDCI_SCHEMA_CHANGED");
-          activeKey = await catalogHash(keys);
-          activeCount = keys.length;
-          if (previous.activeKey && previous.activeKey !== activeKey) {
-            membershipChanged = true;
-            throw Error("FDCI_CANCELLED");
-          }
+    slice = await collectFdciDeltaSlice(async (url, options) => {
+      const u = new URL(url);
+      if (u.origin !== "https://apicapacitaciones.educaciontuc.edu.ar" || u.search || !["/api/gestionCapas/getCapaActivas", "/api/gestionCapas/getRestoCapas", "/api/capa/getCupo"].includes(u.pathname)) throw Error("FDCI_SOURCE_FORBIDDEN");
+      if (requests >= 6) throw Error("FDCI_PROBE_REQUEST_LIMIT");
+      requests++;
+      if (requests > 1) await pause2(400);
+      const response = await fetcher(url, { ...options, redirect: "error", credentials: "omit" });
+      return response;
+    }, {
+      state: previous.state,
+      queued: /* @__PURE__ */ new Map(),
+      courseLimit,
+      now: new Date(checkedAt),
+      onInventory: async (inventory) => {
+        activeKey = await catalogHash(inventory);
+        if (previous.activeKey && previous.activeKey !== activeKey) {
+          previous = fresh(previous.history);
         }
-        return response;
-      }, { state: previous.state, queued: /* @__PURE__ */ new Map(), courseLimit });
-    } catch (e) {
-      if (!membershipChanged) throw e;
-      const restarted = { ...fresh(previous.history), lastCheckAt: checkedAt };
-      await saveCheckpoint(path2, restarted);
-      return { status: "restarted", requests, published: false };
-    }
+        return previous.state;
+      }
+    });
     const items = new Map(previous.items.map((i) => [i.id, i]));
     const observations = { ...previous.observations }, history = { ...previous.history };
     for (const row of slice.items) {
@@ -640,12 +656,11 @@ async function runFdciStaticCycle({ workDirectory, publishDirectory, fetcher, ch
     };
     if (!slice.detail.complete) {
       await saveCheckpoint(path2, next);
-      return { status: "partial", requests, published: false, pending: activeCount - items.size, cursor: next.state };
+      return { status: "partial", requests, published: false, pending: slice.pendingCourses, cursor: next.state };
     }
-    if (items.size !== activeCount) throw Error("STATIC_CATALOG_INCOMPLETE");
     const publishable = [...items.values()].filter((item) => ["ACTIVE", "UPCOMING"].includes(item.normalizedStatus));
-    const publishedObservations = Object.fromEntries(publishable.map((item) => [item.id, observations[item.id]]));
-    const catalog = await buildFdciCatalog(publishable, checkedAt, publishedObservations);
+    const visibleObservations = Object.fromEntries(publishable.map((item) => [item.id, observations[item.id]]));
+    const catalog = await buildFdciCatalog(publishable, checkedAt, visibleObservations);
     const result2 = await publishLocalCatalog(catalog, output);
     await saveCheckpoint(path2, { ...fresh(history), lastCheckAt: checkedAt });
     return { status: "complete", requests, published: true, ...result2 };

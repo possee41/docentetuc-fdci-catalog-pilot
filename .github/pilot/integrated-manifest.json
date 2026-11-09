@@ -1,23 +1,18 @@
 {
   "repository": "possee41/docentetuc-fdci-catalog-pilot",
-  "sourceCommit": "d1bf800bf26576522bde3a600fc8033ccd42bc13",
-  "mode": "manual-disabled-until-authorized",
+  "sourceCommit": "883d545cd5b22ec79fb57fea463ca3c22f143d6f",
+  "mode": "daily-approved-runtime",
   "files": [
     {
       "path": ".github/pilot/fdci-static-runner.mjs",
-      "bytes": 56584,
-      "sha256": "96c762f9f0d897c80380e11008a3af44ccfc4a497616111936320b70a95efe28"
-    },
-    {
-      "path": ".github/workflows/fdci-static-integrated.yml",
-      "bytes": 1515,
-      "sha256": "b912260936256d952a57586129a660acad07d696fb1e87f0fda48b13b85e0741"
+      "bytes": 57202,
+      "sha256": "fae7e99e4a271450c7d854247c7db6285ef87c3da999c14686b9d77c777a69e0"
     }
   ],
   "inputs": [
     {
       "path": "lib/fdci-static-catalog.ts",
-      "sha256": "598b78a3611a85d8c504ff5f5531b0df2ca759b3ba52abaa4dae81629c4752ef"
+      "sha256": "b7b51e02b8a9068389bb3dcefac014deb389337c7b25cf4a9c4ed1f290135531"
     },
     {
       "path": "lib/circuits.ts",
@@ -41,60 +36,51 @@
     },
     {
       "path": "lib/training.ts",
-      "sha256": "3a39019101d8a30ff2ab89b3209950bbaa855bbb72cab051398ef5b163a2e0a6"
+      "sha256": "86ab56542185e1e04b7fdc9a7e4e9051c98b016c19bb1dd4877a50318ad90656"
     },
     {
       "path": "lib/fdci-import.ts",
-      "sha256": "8d46f5aee49190d79c52ee942da28c3d4ce0db584cf219bdd992beb81cb22607"
+      "sha256": "5fca1ea22f303c69e91625e20b286d266f3839528ee4fd96022c73705cfe811f"
     },
     {
       "path": "scripts/import-fdci.mjs",
-      "sha256": "fa54f9626d7ae65b350879cf502064a9cd04eef62d7945a0abe713522c59c86b"
+      "sha256": "b79cdca0022eff3b26b99818db7b9f90f3f798ffbb0184e8a5256725928ba69d"
     },
     {
       "path": "scripts/fdci-static-catalog.mjs",
-      "sha256": "1fb8880110b5a5201b9322019e7aff2c6f1ca2cb129b53e9fd35dab4e84b0c1a"
+      "sha256": "3ec30aefb5c838c23c4a46c8ac3cc6a637f5221233294618c4c7d6b86ae15169"
     },
     {
       "path": "scripts/fdci-incremental.mjs",
-      "sha256": "7c5c506384436cd33411cb68afbb7b177c74962551903c024726fab6a6e49144"
+      "sha256": "50ee4eeca13bbae50809bf7cb4a3db047ee19e5d854c18981f51300a8149bdb0"
     },
     {
       "path": "scripts/collect-fdci-delta.mjs",
-      "sha256": "d82cf0118a781e3f09819dc99c1ed19bf8b64d4d107fb25c1a446f226c70be9f"
+      "sha256": "fc0f93f99948db3a8531bdca02c31393b631b661b0a6ada77a13f27d6e0bf5ad"
     },
     {
       "path": "scripts/fdci-static-cycle.mjs",
-      "sha256": "29477def72d674fc704ae4c98963ddd96cbfd651a5fc23cd52b120395aa24775"
+      "sha256": "a3633436815a6f741cd29b4f7a34606d56bfbfbed0e367164bf10e23427fce7d"
     },
     {
       "path": "scripts/fdci-static-artifact.mjs",
-      "sha256": "b82424737892226f9c5ae7ed9c9d3dce3d8e99a761e0e06db32ff98e8cbe5108"
+      "sha256": "d2f236a438a3fced70aa10e9dcd3fa915c98036d6efa3d7b7ac9e0479333fcf2"
     },
     {
       "path": "scripts/fdci-static-durable.mjs",
-      "sha256": "353fd65d612348ef623cb6877ac080bff6c58f08f7e82db392dfefe6ce15f493"
+      "sha256": "dbb9789df931440a8177d59d6bc1ced1aea3dcdd14ecb6657d8042a042e1b2a5"
     },
     {
       "path": "lib/fdci-static-publication.ts",
-      "sha256": "1e03e7d56479b904e68b01e798501127882d6905304ba9a0260e721afdf17cb5"
+      "sha256": "67f4d7ae5f8e362828e6cece062aa0d02c0c829c1ac266eded7aad4c46930fea"
     },
     {
       "path": "scripts/fdci-static-publisher.mjs",
-      "sha256": "123cd7e5d2e05ae5c293806bf00b9902a325f3efa52304128531c1ee7a779e48"
+      "sha256": "c2f3d19d296f121ea495db6c52c9c253ef0c88f9a4addcf85930e0d3e6ff21e9"
     },
     {
       "path": "scripts/fdci-static-runner.mjs",
-      "sha256": "a7835ade06016586627354aefc5f52a238df61193050785a9eb6f248d0d7e24e"
+      "sha256": "550bb5fffc27ded4964b3bc4df5e29277ee110d42519655e9e4890dd934d53c8"
     }
-  ],
-  "safetyPatch": {
-    "baseRunnerSha256": "83811e57f00300470b9d020cad23520e4299b457c4e5baa98a878cf05669f280",
-    "excludeFromActive": [
-      "CLOSED",
-      "EXPIRED",
-      "UNKNOWN"
-    ],
-    "checkpointUnchanged": true
-  }
+  ]
 }
